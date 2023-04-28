@@ -130,7 +130,7 @@
 		</div>
 	{/if}
 
-	<div class="max-w-4xl mx-auto my-10">
+	<div class="max-w-6xl mx-auto my-10">
 		{#if flags != null}
 			<h2 class="font-bold text-xl text-center mb-2">Flags</h2>
 			<div class="overflow-auto max-h-[400px] bg-base-300 rounded">
@@ -139,6 +139,7 @@
 						<td>Team</td>
 						<td>Flag</td>
 						<td>Status</td>
+						<td>Resp</td>
 						<td>Exploit</td>
 						<td>Received</td>
 						<td>Sent</td>
@@ -160,6 +161,7 @@
 									{flag.status}
 								</div>
 							</td>
+							<td>{flag.checkSystemResponse}</td>
 							<td class="font-mono">{flag.sploit}</td>
 							<td title={flag.receivedTime}>
 								{dayjs(flag.receivedTime).fromNow()}
