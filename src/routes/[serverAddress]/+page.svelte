@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import type { PageData } from './$types';
-	import { invalidateAll } from '$app/navigation';
 	import type { Flag } from '$lib/flag';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
@@ -53,9 +52,18 @@
 	onDestroy(() => {
 		clearInterval(timerId);
 	});
+
+	const BADGE_STATUS_MAP = new Map<string, string>([
+		['ACCEPTED', 'success'],
+		['REJECTED', 'error'],
+		['SKIPPED', 'warning'],
+		['QUEUED', '']
+	]);
 </script>
 
-<nav class="navbar bg-primary text-primary-content rounded-xl shadow-md mb-8 mt-8 max-w-5xl mx-auto sticky top-2 z-10">
+<nav
+	class="navbar bg-secondary text-primary-content rounded-xl shadow-md mb-8 mt-8 max-w-5xl mx-auto sticky top-2 z-10"
+>
 	<div class="navbar-start">
 		<a class="btn btn-ghost" href="/">Change server</a>
 	</div>
@@ -69,9 +77,16 @@
 		</span>
 	</div>
 	<div class="navbar-end">
-		<span class="countdown me-4 text-xl font-mono">
+		<button
+			class="countdown me-4 text-xl font-mono btn btn-ghost"
+			title="Refresh now"
+			on:click={() => {
+				refreshInterval = DEFAULT_INTERVAL;
+				refresh();
+			}}
+		>
 			<span style="--value:{refreshInterval};" />
-		</span>
+		</button>
 	</div>
 </nav>
 
@@ -109,10 +124,10 @@
 		</div>
 	</div>
 
-	<div class="max-w-4xl mx-auto my-10 ">
+	<div class="max-w-4xl mx-auto my-10">
 		{#if flags != null}
 			<h2 class="font-bold text-xl text-center mb-2">Flags</h2>
-			<div class="overflow-auto max-h-[400px] bg-neutral rounded">
+			<div class="overflow-auto max-h-[400px] bg-base-300 rounded">
 				<table class="table table-compact w-full">
 					<thead class="sticky top-0">
 						<td>Team</td>
@@ -124,10 +139,21 @@
 					</thead>
 
 					{#each flags as flag}
+						{@const badgeClass = BADGE_STATUS_MAP.get(flag.status)}
+
 						<tr class="hover">
 							<td>{flag.team}</td>
 							<td class="font-mono">{flag.flag}</td>
-							<td>{flag.status}</td>
+							<td>
+								<div
+									class="badge"
+									class:badge-success={badgeClass == 'success'}
+									class:badge-error={badgeClass == 'error'}
+									class:badge-warning={badgeClass == 'warning'}
+								>
+									{flag.status}
+								</div>
+							</td>
 							<td class="font-mono">{flag.sploit}</td>
 							<td title={flag.receivedTime}>
 								{dayjs(flag.receivedTime).fromNow()}
@@ -142,7 +168,7 @@
 		{#if config != null}
 			<h2 class="font-bold text-xl text-center mb-2 mt-10">Config</h2>
 			<div>
-				<pre class="bg-neutral rounded max-h-[400px] overflow-y-auto p-2">
+				<pre class="bg-base-300 rounded max-h-[400px] overflow-y-auto p-2">
 {JSON.stringify(config, null, 2)}
 				</pre>
 			</div>
