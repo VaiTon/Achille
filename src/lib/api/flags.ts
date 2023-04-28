@@ -7,3 +7,9 @@ export type Flag = {
 	checkSystemResponse: string | null;
 	sentCycle: number | null;
 };
+
+export async function getFlags(server: string) {
+	const flags = (await (await fetch(server + '/api/flags')).json()) as Flag[];
+	flags.reverse();
+	return flags;
+}

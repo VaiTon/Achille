@@ -1,26 +1,22 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import type { PageData } from './$types';
-	import type { Flag } from '$lib/flag';
+	import { getFlags, type Flag } from '$lib/api/flags';
+	import { getConfig } from '$lib/api/config';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
+	import { getStats, type Stats } from '$lib/api/stats';
 	dayjs.extend(relativeTime);
 
 	export let data: PageData;
 
 	let flags: Flag[] | undefined = undefined;
 	let config: object | undefined = undefined;
+	let stats: Stats | undefined = undefined;
 
 	let errored = false;
 
-	const refreshFlags = async () => {
-		flags = (await (await fetch(data.serverAddress + '/api/flags')).json()) as Flag[];
-		flags.reverse();
-	};
-
-	const refreshConfig = async () => {
-		config = await (await fetch(data.serverAddress + '/api/config')).json();
-	};
 	const refresh = async () => {
 		try {
 			await fetch(data.serverAddress + '/');
@@ -30,8 +26,9 @@
 			return;
 		}
 
-		refreshFlags();
-		refreshConfig();
+		flags = await getFlags(data.serverAddress);
+		config = await getConfig(data.serverAddress);
+		stats = await getStats(data.serverAddress);
 	};
 
 	const DEFAULT_INTERVAL = 10;
@@ -109,20 +106,29 @@
 		</div>
 	</div>
 {:else}
-	<div class="flex gap-10 mx-10">
-		<div class="card bg-base-200 w-96 grow">
-			<p class="card-body text-xl font-mono text-center">Flags sent this cycle: 0</p>
+	{#if stats != null}
+		<div class="flex gap-10 mx-10">
+			<div class="card bg-base-200 w-96 grow">
+				<p class="card-body text-xl font-mono text-center">
+					Flags sent last cycle: {stats.flagsSentLastCycle}
+				</p>
+			</div>
+			<div class="card bg-base-200 w-96 grow">
+				<div class="card-body text-xl font-mono text-center">
+					<p>Queued flags: {stats.queuedFlags}</p>
+					<p>Accepted flags: {stats.acceptedFlags}</p>
+					<p>Rejected flags: {stats.rejectedFlags}</p>
+					<p>Skipped flags: {stats.skippedFlags}</p>
+				</div>
+			</div>
+			<div class="card bg-base-200 w-96 grow">
+				<p class="card-body text-xl font-mono text-center">Cycle: {stats.lastCycle}</p>
+			</div>
+			<div class="card bg-base-200 w-96 grow">
+				<p class="card-body text-xl font-mono text-center">A-Index: 0.00</p>
+			</div>
 		</div>
-		<div class="card bg-base-200 w-96 grow">
-			<p class="card-body text-xl font-mono text-center">Exploits working: 0</p>
-		</div>
-		<div class="card bg-base-200 w-96 grow">
-			<p class="card-body text-xl font-mono text-center">Cycle: 0</p>
-		</div>
-		<div class="card bg-base-200 w-96 grow">
-			<p class="card-body text-xl font-mono text-center">A-Index: 0.00</p>
-		</div>
-	</div>
+	{/if}
 
 	<div class="max-w-4xl mx-auto my-10">
 		{#if flags != null}
@@ -135,13 +141,13 @@
 						<td>Status</td>
 						<td>Exploit</td>
 						<td>Received</td>
-						<td>Sent Cycle</td>
+						<td>Sent</td>
 					</thead>
 
 					{#each flags as flag}
 						{@const badgeClass = BADGE_STATUS_MAP.get(flag.status)}
 
-						<tr class="hover">
+						<tr class="hover" transition:fade>
 							<td>{flag.team}</td>
 							<td class="font-mono">{flag.flag}</td>
 							<td>
